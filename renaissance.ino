@@ -7,7 +7,7 @@
  opened and closed. The temperature and cumulative time each door
  has been left open is output on the serial.
  
-  - Added Ehternet shield to report values to a webpage, buzzer moved to pin 8.
+  - Added Ethernet shield to report values to a webpage, buzzer moved to pin 8.
   - Removing webserver and changing to web client to send values to external server
   - Added capability for tracking door status
  
@@ -136,16 +136,18 @@ void loop() {
       {
       Serial.println("Error connecting to client: temperature"); 
       }
-    }
+    }  //end if - temp timer
     
   //Check door status - read input on digital pins 2 & 3
  backDoorState = digitalRead(2);
  frontDoorState = digitalRead(3);
   
  //check backdoor state
- if (backDoorState != lastbackDoorState){
-  //door is open
+ if (backDoorState != lastbackDoorState) {
+   Serial.println("DEBUG 1");
+
    if (backDoorState == HIGH){
+       //door is open
        Serial.println("BackDoor Opened");
         
         //record door open time
@@ -180,9 +182,10 @@ void loop() {
       Serial.println("Error connecting to client: back door open"); 
       }//end else
       
-         }//end if  
-         
-   } else{
+         }//end if door open  
+          
+   
+   else{
      // the back door was closed
     bkdeltatime = millis() - bkopentime;
     bktotaltime = bktotaltime + bkdeltatime;
@@ -223,6 +226,7 @@ void loop() {
       Serial.println("Error connecting to client: back door close"); 
       }//end else
        
+ }
  }
  
  //this delay can most likely be removed
