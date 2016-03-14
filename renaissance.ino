@@ -60,7 +60,7 @@ EthernetClient client;
 void setup(){  
   tone (8,500,200);
   Serial.println("=======VOID SETUP========");
-  
+
   //initialize serial
   Serial.begin(9600);
   
