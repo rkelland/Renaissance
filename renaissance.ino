@@ -9,6 +9,7 @@
  
   - Added Ehternet shield to report values to a webpage, buzzer moved to pin 8.
   - Removing webserver and changing to web client to send values to external server
+  - Added capability for tracking door status
  
  Circuit:
  * Ethernet shield attached to pins 10, 11, 12, 13
@@ -71,10 +72,12 @@ void setup(){
   }
   // give the Ethernet shield a second to initialize:
   delay(1000);
-  Serial.println("connecting...");
-
-  // if you get a connection, report back via serial:
- 
+  
+  //Show ethenet status
+    Serial.println("connecting...");
+    Serial.print("Local IP: ");
+    Serial.println(Ethernet.localIP());
+    
   pinMode(2, INPUT_PULLUP);
   pinMode(3, INPUT_PULLUP);
   pinMode(13, OUTPUT);
@@ -112,15 +115,15 @@ void loop() {
     Serial.println("C");
     
     if (client.connect(server, 80)) {
-        Serial.println("connected");
-        Serial.println("Sending Get...");
+        Serial.println("Connected...sending temperature reading");
         client.print( "GET /ren/add.php?");
+        client.print("db=enviro&&");
         client.print("name=basement&&");
         client.print("temp=");
         client.print( Temp );
         client.print("&&");
         client.print("humi=");
-        client.print( "temphumi" );
+        client.print( "0" );
         client.println( " HTTP/1.1");
         client.println( "Host: 192.168.1.115" );
         client.println( "Content-Type: application/x-www-form-urlencoded" );
@@ -131,36 +134,56 @@ void loop() {
       }
       else
       {
-      Serial.println("Error connecting to client"); 
+      Serial.println("Error connecting to client: temperature"); 
       }
-      
     }
     
-  
-  //readinput on digital pins 2 & 4
+  //Check door status - read input on digital pins 2 & 3
  backDoorState = digitalRead(2);
  frontDoorState = digitalRead(3);
-// Serial.println("back:");
-//  Serial.println(backDoorState);
-//  Serial.println(lastbackDoorState);
-//  Serial.println("front:");
-//  Serial.println(frontDoorState);
-//  Serial.println(lastfrontDoorState);
   
  //check backdoor state
  if (backDoorState != lastbackDoorState){
   //door is open
    if (backDoorState == HIGH){
        Serial.println("BackDoor Opened");
+        
+        //record door open time
         bkopentime = millis();
-         for (int i=0; i<4; i++){
+        
+        //play door tone
+        for (int i=0; i<4; i++){
           tone (8,911+100*i,100);
           delay(100);
-         } 
+        }
+   
+     if (client.connect(server, 80)) {
+        Serial.println("Connected...sending back door open");
+        client.print( "GET /ren/add.php?");
+        client.print("db=zones&&");
+        client.print("doorname=back&&");
+        client.print("event=");
+        client.print( backDoorState );
+        client.print("&&");
+        client.print("deltatime=");
+        client.print( "0");
+        client.println( " HTTP/1.1");
+        client.println( "Host: 192.168.1.115" );
+        client.println( "Content-Type: application/x-www-form-urlencoded" );
+        client.println( "Connection: close" );
+        client.println();
+        client.println();
+        client.stop();
+      } //end if
+      else
+      {
+      Serial.println("Error connecting to client: back door open"); 
+      }//end else
+      
+         }//end if  
          
    } else{
      // the back door was closed
-     
     bkdeltatime = millis() - bkopentime;
     bktotaltime = bktotaltime + bkdeltatime;
      
@@ -169,17 +192,41 @@ void loop() {
     Serial.print(bkdeltatime/1000);
     Serial.print("s and a total of ");
     Serial.print(bktotaltime/1000);
-    Serial.println("s");
-
+    Serial.println("s");    
+    
+    //play tone
     for (int i=0; i<4; i++){
     tone (8,1311-100*i,100);
     delay(100);
      }
+     
+    if (client.connect(server, 80)) {
+        Serial.println("Connected...sending back door close");
+        client.print( "GET /ren/add.php?");
+        client.print("db=zones&&");
+        client.print("doorname=back&&");
+        client.print("event=");
+        client.print( backDoorState );
+        client.print("&&");
+        client.print("deltatime=");
+        client.print(bkdeltatime);
+        client.println( " HTTP/1.1");
+        client.println( "Host: 192.168.1.115" );
+        client.println( "Content-Type: application/x-www-form-urlencoded" );
+        client.println( "Connection: close" );
+        client.println();
+        client.println();
+        client.stop();
+      } //end if
+      else
+      {
+      Serial.println("Error connecting to client: back door close"); 
+      }//end else
+       
  }
+ 
+ //this delay can most likely be removed
  delay (50);
- 
- }
- 
  
   //check frontdoor state
  if (frontDoorState != lastfrontDoorState){
@@ -187,10 +234,37 @@ void loop() {
    if (frontDoorState == HIGH){
        Serial.println("Front Door Opened");
        ftopentime = millis();
+        
+        //play tone
         for (int i=0; i<2; i++){
         tone (8,1011+300*i,200);
         delay(100);
          } 
+         
+        if (client.connect(server, 80)) {
+        Serial.println("Connected...sending front door open");
+        client.print( "GET /ren/add.php?");
+        client.print("db=zones&&");
+        client.print("doorname=front&&");
+        client.print("event=");
+        client.print( frontDoorState );
+        client.print("&&");
+        client.print("deltatime=");
+        client.print("0");
+        client.println( " HTTP/1.1");
+        client.println( "Host: 192.168.1.115" );
+        client.println( "Content-Type: application/x-www-form-urlencoded" );
+        client.println( "Connection: close" );
+        client.println();
+        client.println();
+        client.stop();
+      } //end if
+      else
+      {
+      Serial.println("Error connecting to client: front door open"); 
+      }//end else
+         
+         
    } else{
      // front door was closed
      
@@ -204,11 +278,37 @@ void loop() {
     Serial.print(fttotaltime/1000);
     Serial.println("s");
     
+    //play tone
      for (int i=0; i<2; i++){
      tone (8,1311-300*i,200);
      delay(100);
      }
+     
+       if (client.connect(server, 80)) {
+        Serial.println("Connected...sending front door close");
+        client.print( "GET /ren/add.php?");
+        client.print("db=zones&&");
+        client.print("doorname=front&&");
+        client.print("event=");
+        client.print( frontDoorState );
+        client.print("&&");
+        client.print("deltatime=");
+        client.print(ftdeltatime);
+        client.println( " HTTP/1.1");
+        client.println( "Host: 192.168.1.115" );
+        client.println( "Content-Type: application/x-www-form-urlencoded" );
+        client.println( "Connection: close" );
+        client.println();
+        client.println();
+        client.stop();
+      } //end if
+      else
+      {
+      Serial.println("Error connecting to client: front door close"); 
+      }//end else  
  }
+ 
+ //this delay can most likely be removed.
  delay (50);
   
 }
