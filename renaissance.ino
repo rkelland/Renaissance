@@ -8,6 +8,7 @@
  has been left open is output on the serial.
  
   - Added Ehternet shield to report values to a webpage, buzzer moved to pin 8.
+  - Removing webserver and changing to web client to send values to external server
  
  Circuit:
  * Ethernet shield attached to pins 10, 11, 12, 13
@@ -29,15 +30,15 @@
 
 // Enter a MAC address and IP address for your controller below.
 // The IP address will be dependent on your local network:
-byte mac[] = {
-  0xAD, 0x01, 0x04, 0xEF, 0xFE, 0xED
-};
-IPAddress ip(192, 168, 2, 10);
+byte mac[] = { 0x00, 0x01, 0x04, 0xEF, 0xFE, 0xED };
+//server is Trevor
+IPAddress server(192, 168, 1, 115);
+
+//Backup static IP
+IPAddress ip(192, 168, 1, 130);
 
 // Initialize the Ethernet server library
-// with the IP address and port you want to use
-// (port 80 is default for HTTP):
-EthernetServer server(80);
+EthernetClient client;
 
 //globals
   int backDoorState = 0;
@@ -59,17 +60,22 @@ EthernetServer server(80);
 void setup(){  
   tone (8,500,200);
   Serial.println("=======VOID SETUP========");
-  
   time = millis();
     
   //initialize serial
   Serial.begin(9600);
   
-  // start the Ethernet connection and the server:
-  Ethernet.begin(mac, ip);
-  server.begin();
-  Serial.print("server is at ");
-  Serial.println(Ethernet.localIP());
+  // start the Ethernet connection:
+  if (Ethernet.begin(mac) == 0) {
+    Serial.println("Failed to configure Ethernet using DHCP");
+    // try to congifure using IP address instead of DHCP:
+    Ethernet.begin(mac, ip);
+  }
+  // give the Ethernet shield a second to initialize:
+  delay(1000);
+  Serial.println("connecting...");
+
+  // if you get a connection, report back via serial:
  
   pinMode(2, INPUT_PULLUP);
   pinMode(3, INPUT_PULLUP);
@@ -92,6 +98,7 @@ void setup(){
   
 }
 
+
 //loop runs FORVEVER
 void loop() {
   
@@ -100,11 +107,35 @@ void loop() {
     Temp = 1 / (0.0012954816 + (0.00023539242 * Temp) + (0.00000011285038 * Temp * Temp * Temp)); 
     Temp = Temp - 273.15; 
     
-    if (millis() - time >5000){   
+    if (millis() - time >600000){   
     time=millis();
     Serial.print(Temp);
     Serial.print(char(186));
-    Serial.println("C"); 
+    Serial.println("C");
+    
+    if (client.connect(server, 80)) {
+        Serial.println("connected");
+        Serial.println("Sending Get...");
+        client.print( "GET /ren/add.php?");
+        client.print("name=basement&&");
+        client.print("temp=");
+        client.print( Temp );
+        client.print("&&");
+        client.print("humi=");
+        client.print( "temphumi" );
+        client.println( " HTTP/1.1");
+        client.println( "Host: 192.168.1.115" );
+        client.println( "Content-Type: application/x-www-form-urlencoded" );
+        client.println( "Connection: close" );
+        client.println();
+        client.println();
+        client.stop();
+      }
+      else
+      {
+      Serial.println("Error connecting to client"); 
+      }
+      
     }
     
   
@@ -186,77 +217,5 @@ void loop() {
 
  lastbackDoorState = backDoorState;
  lastfrontDoorState = frontDoorState;
- 
-   // listen for incoming clients
-  EthernetClient client = server.available();
-  if (client) {
-    Serial.println("new client");
-    // an http request ends with a blank line
-    boolean currentLineIsBlank = true;
-    while (client.connected()) {
-      if (client.available()) {
-        char c = client.read();
-        Serial.write(c);
-        // if you've gotten to the end of the line (received a newline
-        // character) and the line is blank, the http request has ended,
-        // so you can send a reply
-        if (c == '\n' && currentLineIsBlank) {
-          // send a standard http response header
-          client.println("HTTP/1.1 200 OK");
-          client.println("Content-Type: text/html");
-          client.println("Connection: close");  // the connection will be closed after completion of the response
-          client.println("Refresh: 5");  // refresh the page automatically every 5 sec
-          client.println();
-          client.println("<!DOCTYPE HTML>");
-          client.println("<html>");
-          client.println("<title>Renaisance</title>");
-          //add html detail here
-          client.println("<h1>System Status</h1>");
-          
-          //Door Status
-          client.println("<h2>Doors</h2>");
-          client.print("<ul>");
-          
-          client.print("<li>Front Door</li><li><ul><li>Status: ");
-          client.print(doorstatus[frontDoorState]);
-          client.print("</li><li>Open time: ");
-          client.print(fttotaltime/1000);
-          client.println("s</li></ul></li>");
-          
-          client.print("<li>Back Door</li><li><ul><li>Status: ");
-          client.print(doorstatus[backDoorState]);
-          client.print("</li><li>Open time: ");
-          client.print(bktotaltime/1000);
-          client.println("s</li></ul></li>");
-          
-          
-          client.print("</ul>");
-          
-          
-          //Environment Sensors
-          client.println("<h2>Environment</h2>");
-          client.print("<ul><li>Temperature: ");
-          client.print(Temp);
-          client.print(char(186));
-          client.print("C</li></ul>");
-          
-          client.println("</html>");
-          break;
-        }
-        if (c == '\n') {
-          // you're starting a new line
-          currentLineIsBlank = true;
-        } else if (c != '\r') {
-          // you've gotten a character on the current line
-          currentLineIsBlank = false;
-        }
-      }
-    }
-    // give the web browser time to receive the data
-    delay(1);
-    // close the connection:
-    client.stop();
-    Serial.println("client disconnected");
-  }
 
 }
