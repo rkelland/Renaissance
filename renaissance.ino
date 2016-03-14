@@ -54,7 +54,6 @@ EthernetClient client;
   unsigned long time = 0;
   long Resistance;
   double Temp;  
-  char* doorstatus[]={"<font color='blue'>Closed</font>", "<font color='red'><b>Open</b></font>"};
 
 //runs after hitting reset
 void setup(){  
