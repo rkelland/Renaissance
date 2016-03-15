@@ -9,8 +9,8 @@
 <?php
    include("conec.php");
    $link=Conection();
-   $temperatures=mysql_query("select * from enviro order by id desc",$link);
-   $ftevents=mysql_query("select * from zones where doorname='front' order by id desc",$link);
+   $temperatures=mysql_query("select * from enviro where created = CURDATE() order by id desc",$link);
+   $ftevents=mysql_query("select * from zones where doorname='front'  order by id desc",$link);
 ?>
 
 <h2>Temp and Humidity</h2>
