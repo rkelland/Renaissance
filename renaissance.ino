@@ -108,8 +108,9 @@ void loop() {
     Temp = 1 / (0.0012954816 + (0.00023539242 * Temp) + (0.00000011285038 * Temp * Temp * Temp)); 
     Temp = Temp - 273.15; 
     
-    if (millis() - time >=600000){   
-    time=time+600000;
+    //10 minutes corrected for drift.
+    if (millis() - time >=598979){   
+    time=millis();
     Serial.print(Temp);
     Serial.print(char(186));
     Serial.println("C");
