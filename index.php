@@ -98,11 +98,13 @@
 <?php
    include("conec.php");
    $link=Conection();
-   $temperatures=mysql_query("select * from enviro where created = CURDATE() order by id desc",$link);
+   $temperatures=mysql_query("select * from enviro where DATE(created) = CURDATE()  order by id desc",$link);
    $ftevents=mysql_query("select * from zones where doorname='front'  order by id desc",$link);
+   $bkevents=mysql_query("select * from zones where doorname='back'  order by id desc",$link);
+
 ?>
 
-<h2>Temp and Humidity</h2>
+<h2>Today's Temp and Humidity</h2>
 <table border="1" cellspacing="1" cellpadding="1">
       <tr>
          <td>&nbsp;Name &nbsp;</td>
@@ -135,6 +137,24 @@ printf("<tr><td> &nbsp;%s </td><td>%s</td><td>%s</td><td> &nbsp;%s&nbsp; </td></
  ?>
 
 <div id="container" style="width: 100%; height: 400px; margin: 0 auto"></div>
+</table>
+
+<h2>Back Door</h2>
+<table border="1" cellspacing="1" cellpadding="1">
+      <tr>
+         <td>&nbsp;Door &nbsp;</td>
+         <td>&nbsp;Event &nbsp;</td>
+         <td>&nbsp;Time &nbsp;</td>
+         <td>&nbsp;Date &nbsp;</td>
+       </tr>
+<?php
+   while($row = mysql_fetch_array($bkevents)) {
+printf("<tr><td> &nbsp;%s </td><td>%s</td><td>%s</td><td> &nbsp;%s&nbsp; </td></tr>",$row["doorname"], $row["event"], $row["deltatime"], $row["created"]);
+   }
+   mysql_free_result($result);
+ ?>
+</table>
+
 </table>
 </body>
 </html>
