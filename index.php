@@ -56,7 +56,9 @@
                         }]
                     },
                     tooltip: {
-                    enabled:true
+			formatter: function() {
+			return Highcharts.dateFormat('%l:%M%p', this.x) +': <b>'+ this.y + 'C</b>';
+			}
                      },
                     legend: {
                         layout: 'vertical',
