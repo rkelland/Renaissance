@@ -2,7 +2,7 @@
 <head>
    <title>Data of Sensor</title>
 
-<script type="text/javascript" src="../highcharts/js/highcharts.js" ></script>
+<script type="text/javascript" src="../highstock/js/highstock.js" ></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
 
 
@@ -31,20 +31,20 @@
                         text: '',
                         x: -20
                     },
-                    xAxis: {
-                        type: 'datetime',
-                        tickInterval: 3600 * 1000 *4, // one hour
-                        tickWidth: 0,
-                        gridLineWidth: 1,
-                        labels: {
-                            align: 'center',
-                            x: -3,
-                            y: 20,
-                            formatter: function() {
-                                return Highcharts.dateFormat('%a %l%p', this.value);
-                            }
-                        }
-                    },
+//                    xAxis: {
+  //                      type: 'datetime',
+    //                    tickInterval: 3600 * 1000, // one hour
+      //                  tickWidth: 0,
+        //                gridLineWidth: 1,
+          //              labels: {
+            //                align: 'center',
+              //              x: -3,
+                //            y: 20,
+                  //          formatter: function() {
+                    //            return Highcharts.dateFormat('%l%p', this.value);
+                      //      }
+                       // }
+                   // },
                     yAxis: {
                         title: {
                             text: 'Temperature (C)'
@@ -74,7 +74,7 @@
                 // to the options and initiate the chart.
                 // This data is obtained by exporting a GA custom report to TSV.
                 // http://api.jquery.com/jQuery.get/
-                jQuery.get('data.php', null, function(tsv) {
+                jQuery.get('datacopy.php', null, function(tsv) {
                     var lines = [];
                     traffic = [];
                     try {
@@ -82,15 +82,15 @@
                         tsv = tsv.split(/\n/g);
                         jQuery.each(tsv, function(i, line) {
                             line = line.split(/\t/);
-                            date = Date.parse(line[0] +' UTC');
+                            date = line[0];
                             traffic.push([
-                                date,
+                                i,
                                 parseFloat(line[1].replace(',', ''), 10)
                             ]);
                         });
                     } catch (e) {  }
                     options.series[0].data = traffic;
-                    chart = new Highcharts.Chart(options);
+                    chart = new Highcharts.StockChart(options);
                 });
             });
 </script>
