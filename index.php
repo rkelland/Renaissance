@@ -33,7 +33,7 @@
                     },
                     xAxis: {
                         type: 'datetime',
-                        tickInterval: 3600 * 1000 *4, // one hour
+                        tickInterval: 3600 * 1000 *3, // one hour
                         tickWidth: 0,
                         gridLineWidth: 1,
                         labels: {
