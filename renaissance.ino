@@ -148,7 +148,7 @@ void loop() {
       Serial.print(char(186));
       Serial.println("C");
  
-      report_enviro_to_db ("baement", Temp, 0);   
+      report_enviro_to_db ("basement", Temp, 0);   
  
     }  //end if - temp timer
     
