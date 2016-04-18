@@ -3,11 +3,32 @@
 <title>Whitburn Zones</title>
 
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
 <script src="../highcharts/js/highcharts.js"></script>
 <script src="../highcharts/js/highcharts-more.js"></script>
 
 
 <script>
+
+  $(function() {
+    $( "#from" ).datepicker({
+      defaultDate: "+1w",
+      changeMonth: true,
+      numberOfMonths: 1,
+      onClose: function( selectedDate ) {
+        $( "#to" ).datepicker( "option", "minDate", selectedDate );
+      }
+    });
+    $( "#to" ).datepicker({
+      defaultDate: "+1w",
+      changeMonth: true,
+      numberOfMonths: 1,
+      onClose: function( selectedDate ) {
+        $( "#from" ).datepicker( "option", "maxDate", selectedDate );
+      }
+    });
+  });
 
 $(document).ready(function() {
 	var options = {
@@ -44,10 +65,11 @@ $(document).ready(function() {
 
 };
 
-var drawChart = function(data, name, color) {
+var drawChart = function(data, name, color, index) {
     // 'series' is an array of objects with keys: 
     //     - 'name' (string)
     //     - 'data' (array)
+    //     - 'index' (int) i the id of the series
     var newSeriesData = {
         name: name,
 	color: color,
@@ -55,27 +77,50 @@ var drawChart = function(data, name, color) {
     };
 
     // Add the new data to the series array
-    options.series.push(newSeriesData);
+    options.series[index] = newSeriesData;
+//    options.series.push(newSeriesData);
 
     // If you want to remove old series data, you can do that here too
-
+    //	console.log("options");
+    //	console.log(options);
     // Render the chart
     var chart = new Highcharts.Chart(options);
 };
 
+$('#update').click(function() {
+   if($('#to').val() == ''){
+	var today = new Date();
+	today.setHours(0, 0, 0, 0);
+	to = Date.parse(today)/1000+86400;
+	from = Date.parse(today)/1000 - (86400)*6;
+//	alert("blank");
+   }else{
+	to = Date.parse($('#to').val())/1000;
+	from = Date.parse($('#from').val())/1000;
+//	alert("not blank");
+	}
 
-$.getJSON('http://192.168.1.115/ren/altdata.php?doorname=front&callback=?', function(data){
-	drawChart(data,'Front','#7cb5ec');
+  $.getJSON('http://192.168.1.115/ren/altdata.php?doorname=front&callback=?', function(data){
+//	alert(from);
+//	alert(to);
+	
+	var fdata=$(data).filter(function(i,n)
+		{return (from < n.fulldate && n.fulldate < to);}
+		);
+	drawChart(fdata,'Front','#7cb5ec',0);
 	});
 
 $.getJSON('http://192.168.1.115/ren/altdata.php?doorname=back&callback=?', function(data){
-	drawChart(data,'Back','#90ed7d');        
+        var fdata=$(data).filter(function(i,n)
+                {return (from < n.fulldate && n.fulldate <to);}  
+                );
+	drawChart(fdata,'Back','#90ed7d',1);        
         });
 
 //	var chart = new Highcharts.Chart(options);
 
 });
-
+});
 
 </script>
 
@@ -83,6 +128,13 @@ $.getJSON('http://192.168.1.115/ren/altdata.php?doorname=back&callback=?', funct
 </head>
 
 <body>
+<div>
+<label for="from">From</label>
+<input type="text" id="from" name="from">
+<label for="to">to</label>
+<input type="text" id="to" name="to">
+<button id="update">update</button>
+</div>
 
 <div id="containerFront" style="width:100%; height:600px;"></div>
 
