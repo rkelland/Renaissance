@@ -14,6 +14,7 @@
  * Ethernet shield attached to pins 10, 11, 12, 13
  * Back Door on pin 2
  * Front Door on pin 3
+ * DHT22 Temp & Humidity on pin 4
  * Buzzer on pin 8
  * 4K7 Thermistor & resistor as divider on A0
  
