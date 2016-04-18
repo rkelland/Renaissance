@@ -2,23 +2,20 @@
 <head>
    <title>Data of Sensor</title>
 
-<script type="text/javascript" src="../highcharts/js/highcharts.js" ></script>
+<script type="text/javascript" src="../highstock/js/highstock.js" ></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
 
 
 <?php
-//   include("conec.php");
-//   $link=Conection();
-//   $temperatures=mysql_query("select * from enviro where DATE(created) = CURDATE()  order by id desc",$link);
+   include("conec.php");
+   $link=Conection();
+  // $temperatures=mysql_query("select * from enviro where DATE(created) = CURDATE()  order by id desc",$link);
 //   $ftevents=mysql_query("select * from zones where doorname='front'  order by id desc",$link);
 //   $bkevents=mysql_query("select * from zones where doorname='back'  order by id desc",$link);
 
 ?>
 
 <script type="text/javascript">
- var now =Date.now();
- var twentyfour = now - (28 * 60 * 60 * 1000);
- var fortyeight = now - (52 * 60 * 60 * 1000);
     var chart;
             $(document).ready(function() {
                 var options = {
@@ -35,25 +32,19 @@
                         x: -20
                     },
                     xAxis: {
-           		 plotBands: [{
-                		color: '#EEEEEE',
-                		from: fortyeight,
-               			to: twentyfour
-           		 }],
                         type: 'datetime',
-                        tickInterval: 3600 * 1000 *3, // one hour
-                        tickWidth: 0,
-                        gridLineWidth: 1,
+         //               tickInterval: 3600 * 1000, // one hour
+                        //tickWidth: 0,
+                       // gridLineWidth: 1,
                         labels: {
                             align: 'center',
-                            x: -3,
-                            y: 20,
+                         //   x: -3,
+                          //  y: 20,
                             formatter: function() {
-                                return Highcharts.dateFormat('%a %l%p', this.value);
+                                return Highcharts.dateFormat('%b-%d %H:%M', this.value);
                             }
-
                         }
-                    },
+                   },
                     yAxis: {
                         title: {
                             text: 'Temperature (C)'
@@ -65,9 +56,7 @@
                         }]
                     },
                     tooltip: {
-			formatter: function() {
-			return Highcharts.dateFormat('%l:%M%p', this.x) +': <b>'+ this.y + 'C</b>';
-			}
+                    enabled:true
                      },
                     legend: {
                         layout: 'vertical',
@@ -85,7 +74,7 @@
                 // to the options and initiate the chart.
                 // This data is obtained by exporting a GA custom report to TSV.
                 // http://api.jquery.com/jQuery.get/
-                jQuery.get('data.php', null, function(tsv) {
+                jQuery.get('datacopy.php', null, function(tsv) {
                     var lines = [];
                     traffic = [];
                     try {
@@ -93,15 +82,15 @@
                         tsv = tsv.split(/\n/g);
                         jQuery.each(tsv, function(i, line) {
                             line = line.split(/\t/);
-                            date = Date.parse(line[0] +' UTC');
+                            date = line[0];
                             traffic.push([
-                                date,
+                                i,
                                 parseFloat(line[1].replace(',', ''), 10)
                             ]);
                         });
                     } catch (e) {  }
                     options.series[0].data = traffic;
-                    chart = new Highcharts.Chart(options);
+                    chart = new Highcharts.StockChart(options);
                 });
             });
 </script>
@@ -111,7 +100,6 @@
 <body>
 
 <h1>Data from the Sensor</h1>
-<a href="zones.html">Zones</a>
 
 <div id="container" style="width: 100%;  margin: 0 auto"></div>
 
@@ -131,6 +119,8 @@ printf("<tr><td> &nbsp;%s </td><td>%s</td><td>%s</td><td> &nbsp;%s&nbsp; </td></
    mysql_free_result($result);
  ?>
 </table>
+
+--->
 
 <h2>Front Door</h2>
 <table border="1" cellspacing="1" cellpadding="1">
@@ -164,7 +154,7 @@ printf("<tr><td> &nbsp;%s </td><td>%s</td><td>%s</td><td> &nbsp;%s&nbsp; </td></
    mysql_free_result($result);
  ?>
 </table>
---->
+
 </table>
 </body>
 </html>

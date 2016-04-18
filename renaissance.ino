@@ -1,4 +1,3 @@
-
 /*
  Renaissance
  
@@ -49,20 +48,28 @@ EthernetClient client;
   unsigned long bkopentime;
   unsigned long ftopentime;
   unsigned long bkdeltatime;
-  unsigned long bktotaltime;
   unsigned long ftdeltatime = 0;
-  unsigned long fttotaltime = 0;
   unsigned long time = 0;
+  unsigned long smoothTime = 0;
   long Resistance;
-  double Temp;  
+  double Temp;
+  const int numSamples = 6;
+  int samples[numSamples];
+  int sampleIndex = 0;
+  int total = 0;
+  int avgSample = 0;
+  //Time in millis for each reading corrected for drift.
+  unsigned long sampleInterval = 1796700;
 
 //runs after hitting reset
 void setup(){  
   tone (8,500,200);
+  
+    //initialize serial
+  Serial.begin(9600);
   Serial.println("=======VOID SETUP========");
 
-  //initialize serial
-  Serial.begin(9600);
+
   
   // start the Ethernet connection:
   if (Ethernet.begin(mac) == 0) {
@@ -96,24 +103,49 @@ void setup(){
   Serial.println("=======END VOID SETUP========");
   delay(200);
   tone (8,700,200);
-  
 }
-
 
 //loop runs FORVEVER
 void loop() {
+ 
+    if((millis() - smoothTime) >= (sampleInterval/numSamples)-100){
+      //reset timer
+      smoothTime = millis();
+      //Serial.print("SampleIndex: ");
+      //Serial.println(sampleIndex);
+      //Serial.print(" old total: ");
+      //Serial.println(total);
+      total = total - samples[sampleIndex];
+      samples[sampleIndex] =  analogRead(THERM_PIN);
+      //Serial.print("reading: ");
+      //Serial.println(samples[sampleIndex]);
+      total = total + samples[sampleIndex];
+      //Serial.print(" new total: ");
+      //Serial.println(total);
+      sampleIndex = sampleIndex+1;
+    }//end if smoothTime
   
-    Resistance=((10240000/analogRead(THERM_PIN)) - 10000); 
-    Temp = log(Resistance);
-    Temp = 1 / (0.0012954816 + (0.00023539242 * Temp) + (0.00000011285038 * Temp * Temp * Temp)); 
-    Temp = Temp - 273.15; 
-    
-    //10 minutes corrected for drift.
-    if (millis() - time >=598979){   
-    time=millis();
-    Serial.print(Temp);
-    Serial.print(char(186));
-    Serial.println("C");
+  //send temperature info to database base on sampleInterval time
+    if (millis() - time >= sampleInterval){   
+  
+      //reset timers and index
+      time=millis();
+      smoothTime = millis();
+      sampleIndex = 0;
+      
+      avgSample = total/numSamples;
+      
+      Serial.print("Average Sample:");
+      Serial.println(avgSample);
+      
+      Resistance=((10240000/avgSample) - 10000); 
+      Temp = log(Resistance);
+      Temp = 1 / (0.0012954816 + (0.00023539242 * Temp) + (0.00000011285038 * Temp * Temp * Temp)); 
+      Temp = Temp - 273.15; 
+ 
+      Serial.print(Temp);
+      Serial.print(char(186));
+      Serial.println("C");
     
     if (client.connect(server, 80)) {
         Serial.println("Connected...sending temperature reading");
@@ -145,7 +177,6 @@ void loop() {
   
  //check backdoor state
  if (backDoorState != lastbackDoorState) {
-   Serial.println("DEBUG 1");
 
    if (backDoorState == HIGH){
        //door is open
@@ -189,13 +220,10 @@ void loop() {
    else{
      // the back door was closed
     bkdeltatime = millis() - bkopentime;
-    bktotaltime = bktotaltime + bkdeltatime;
      
     Serial.print("Back Door Closed");
     Serial.print(", door was open just now for ");
     Serial.print(bkdeltatime/1000);
-    Serial.print("s and a total of ");
-    Serial.print(bktotaltime/1000);
     Serial.println("s");    
     
     //play tone
@@ -229,9 +257,6 @@ void loop() {
        
  }
  }
- 
- //this delay can most likely be removed
- delay (50);
  
   //check frontdoor state
  if (frontDoorState != lastfrontDoorState){
@@ -274,13 +299,10 @@ void loop() {
      // front door was closed
      
     ftdeltatime = millis()-ftopentime;
-    fttotaltime = fttotaltime + ftdeltatime;
      
     Serial.print("Front Door Closed");
     Serial.print(", door was open just now for ");
     Serial.print(ftdeltatime/1000);
-    Serial.print("s and a total of ");
-    Serial.print(fttotaltime/1000);
     Serial.println("s");
     
     //play tone
@@ -312,9 +334,6 @@ void loop() {
       Serial.println("Error connecting to client: front door close"); 
       }//end else  
  }
- 
- //this delay can most likely be removed.
- delay (50);
   
 }
 
