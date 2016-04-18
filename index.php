@@ -7,15 +7,18 @@
 
 
 <?php
-   include("conec.php");
-   $link=Conection();
-  // $temperatures=mysql_query("select * from enviro where DATE(created) = CURDATE()  order by id desc",$link);
-   $ftevents=mysql_query("select * from zones where doorname='front'  order by id desc",$link);
-   $bkevents=mysql_query("select * from zones where doorname='back'  order by id desc",$link);
+//   include("conec.php");
+//   $link=Conection();
+//   $temperatures=mysql_query("select * from enviro where DATE(created) = CURDATE()  order by id desc",$link);
+//   $ftevents=mysql_query("select * from zones where doorname='front'  order by id desc",$link);
+//   $bkevents=mysql_query("select * from zones where doorname='back'  order by id desc",$link);
 
 ?>
 
 <script type="text/javascript">
+ var now =Date.now();
+ var twentyfour = now - (28 * 60 * 60 * 1000);
+ var fortyeight = now - (52 * 60 * 60 * 1000);
     var chart;
             $(document).ready(function() {
                 var options = {
@@ -32,8 +35,13 @@
                         x: -20
                     },
                     xAxis: {
+           		 plotBands: [{
+                		color: '#EEEEEE',
+                		from: fortyeight,
+               			to: twentyfour
+           		 }],
                         type: 'datetime',
-                        tickInterval: 3600 * 1000 *4, // one hour
+                        tickInterval: 3600 * 1000 *3, // one hour
                         tickWidth: 0,
                         gridLineWidth: 1,
                         labels: {
@@ -43,6 +51,7 @@
                             formatter: function() {
                                 return Highcharts.dateFormat('%a %l%p', this.value);
                             }
+
                         }
                     },
                     yAxis: {
@@ -56,7 +65,9 @@
                         }]
                     },
                     tooltip: {
-                    enabled:true
+			formatter: function() {
+			return Highcharts.dateFormat('%l:%M%p', this.x) +': <b>'+ this.y + 'C</b>';
+			}
                      },
                     legend: {
                         layout: 'vertical',
@@ -100,6 +111,7 @@
 <body>
 
 <h1>Data from the Sensor</h1>
+<a href="zones.html">Zones</a>
 
 <div id="container" style="width: 100%;  margin: 0 auto"></div>
 
@@ -119,8 +131,6 @@ printf("<tr><td> &nbsp;%s </td><td>%s</td><td>%s</td><td> &nbsp;%s&nbsp; </td></
    mysql_free_result($result);
  ?>
 </table>
-
---->
 
 <h2>Front Door</h2>
 <table border="1" cellspacing="1" cellpadding="1">
@@ -154,7 +164,7 @@ printf("<tr><td> &nbsp;%s </td><td>%s</td><td>%s</td><td> &nbsp;%s&nbsp; </td></
    mysql_free_result($result);
  ?>
 </table>
-
+--->
 </table>
 </body>
 </html>

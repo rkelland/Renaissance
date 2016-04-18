@@ -10,8 +10,8 @@
    include("conec.php");
    $link=Conection();
   // $temperatures=mysql_query("select * from enviro where DATE(created) = CURDATE()  order by id desc",$link);
-   $ftevents=mysql_query("select * from zones where doorname='front'  order by id desc",$link);
-   $bkevents=mysql_query("select * from zones where doorname='back'  order by id desc",$link);
+//   $ftevents=mysql_query("select * from zones where doorname='front'  order by id desc",$link);
+//   $bkevents=mysql_query("select * from zones where doorname='back'  order by id desc",$link);
 
 ?>
 
@@ -31,20 +31,20 @@
                         text: '',
                         x: -20
                     },
-//                    xAxis: {
-  //                      type: 'datetime',
-    //                    tickInterval: 3600 * 1000, // one hour
-      //                  tickWidth: 0,
-        //                gridLineWidth: 1,
-          //              labels: {
-            //                align: 'center',
-              //              x: -3,
-                //            y: 20,
-                  //          formatter: function() {
-                    //            return Highcharts.dateFormat('%l%p', this.value);
-                      //      }
-                       // }
-                   // },
+                    xAxis: {
+                        type: 'datetime',
+         //               tickInterval: 3600 * 1000, // one hour
+                        //tickWidth: 0,
+                       // gridLineWidth: 1,
+                        labels: {
+                            align: 'center',
+                         //   x: -3,
+                          //  y: 20,
+                            formatter: function() {
+                                return Highcharts.dateFormat('%b-%d %H:%M', this.value);
+                            }
+                        }
+                   },
                     yAxis: {
                         title: {
                             text: 'Temperature (C)'
