@@ -58,14 +58,18 @@ EthernetClient client;
   int sampleIndex = 0;
   int total = 0;
   int avgSample = 0;
+  //Time in millis for each reading corrected for drift.
+  unsigned long sampleInterval = 1796700;
 
 //runs after hitting reset
 void setup(){  
   tone (8,500,200);
+  
+    //initialize serial
+  Serial.begin(9600);
   Serial.println("=======VOID SETUP========");
 
-  //initialize serial
-  Serial.begin(9600);
+
   
   // start the Ethernet connection:
   if (Ethernet.begin(mac) == 0) {
@@ -104,19 +108,25 @@ void setup(){
 //loop runs FORVEVER
 void loop() {
  
-    if(millis() - smoothTime >= 299400){
+    if((millis() - smoothTime) >= (sampleInterval/numSamples)-100){
       //reset timer
       smoothTime = millis();
-      
+      //Serial.print("SampleIndex: ");
+      //Serial.println(sampleIndex);
+      //Serial.print(" old total: ");
+      //Serial.println(total);
       total = total - samples[sampleIndex];
       samples[sampleIndex] =  analogRead(THERM_PIN);
+      //Serial.print("reading: ");
+      //Serial.println(samples[sampleIndex]);
       total = total + samples[sampleIndex];
+      //Serial.print(" new total: ");
+      //Serial.println(total);
       sampleIndex = sampleIndex+1;
     }//end if smoothTime
   
-  
-    //30 minutes corrected for drift.
-    if (millis() - time >=1796783){   
+  //send temperature info to database base on sampleInterval time
+    if (millis() - time >= sampleInterval){   
   
       //reset timers and index
       time=millis();
@@ -124,6 +134,9 @@ void loop() {
       sampleIndex = 0;
       
       avgSample = total/numSamples;
+      
+      Serial.print("Average Sample:");
+      Serial.println(avgSample);
       
       Resistance=((10240000/avgSample) - 10000); 
       Temp = log(Resistance);
