@@ -147,29 +147,9 @@ void loop() {
       Serial.print(Temp);
       Serial.print(char(186));
       Serial.println("C");
-    
-    if (client.connect(server, 80)) {
-        Serial.println("Connected...sending temperature reading");
-        client.print( "GET /ren/add.php?");
-        client.print("db=enviro&&");
-        client.print("name=basement&&");
-        client.print("temp=");
-        client.print( Temp );
-        client.print("&&");
-        client.print("humi=");
-        client.print( "0" );
-        client.println( " HTTP/1.1");
-        client.println( "Host: 192.168.1.115" );
-        client.println( "Content-Type: application/x-www-form-urlencoded" );
-        client.println( "Connection: close" );
-        client.println();
-        client.println();
-        client.stop();
-      }
-      else
-      {
-      Serial.println("Error connecting to client: temperature"); 
-      }
+ 
+      report_enviro_to_db ("baement", Temp, 0);   
+ 
     }  //end if - temp timer
     
   //Check door status - read input on digital pins 2 & 3
@@ -192,31 +172,9 @@ void loop() {
           delay(100);
         }
    
-     if (client.connect(server, 80)) {
-        Serial.println("Connected...sending back door open");
-        client.print( "GET /ren/add.php?");
-        client.print("db=zones&&");
-        client.print("doorname=back&&");
-        client.print("event=");
-        client.print( backDoorState );
-        client.print("&&");
-        client.print("deltatime=");
-        client.print( "0");
-        client.println( " HTTP/1.1");
-        client.println( "Host: 192.168.1.115" );
-        client.println( "Content-Type: application/x-www-form-urlencoded" );
-        client.println( "Connection: close" );
-        client.println();
-        client.println();
-        client.stop();
-      } //end if
-      else
-      {
-      Serial.println("Error connecting to client: back door open"); 
-      }//end else
-      
-         }//end if door open  
-          
+   report_zone_to_db("back", 1, 0);
+   
+            }//end if door open  
    
    else{
      // the back door was closed
@@ -233,31 +191,10 @@ void loop() {
     delay(100);
      }
      
-    if (client.connect(server, 80)) {
-        Serial.println("Connected...sending back door close");
-        client.print( "GET /ren/add.php?");
-        client.print("db=zones&&");
-        client.print("doorname=back&&");
-        client.print("event=");
-        client.print( backDoorState );
-        client.print("&&");
-        client.print("deltatime=");
-        client.print(bkdeltatime);
-        client.println( " HTTP/1.1");
-        client.println( "Host: 192.168.1.115" );
-        client.println( "Content-Type: application/x-www-form-urlencoded" );
-        client.println( "Connection: close" );
-        client.println();
-        client.println();
-        client.stop();
-      } //end if
-      else
-      {
-      Serial.println("Error connecting to client: back door close"); 
-      }//end else
+  report_zone_to_db("back", 0, bkdeltatime);
        
  }
- }
+ }//end check backdoor state
  
   //check frontdoor state
  if (frontDoorState != lastfrontDoorState){
@@ -272,29 +209,7 @@ void loop() {
         delay(100);
          } 
          
-        if (client.connect(server, 80)) {
-        Serial.println("Connected...sending front door open");
-        client.print( "GET /ren/add.php?");
-        client.print("db=zones&&");
-        client.print("doorname=front&&");
-        client.print("event=");
-        client.print( frontDoorState );
-        client.print("&&");
-        client.print("deltatime=");
-        client.print("0");
-        client.println( " HTTP/1.1");
-        client.println( "Host: 192.168.1.115" );
-        client.println( "Content-Type: application/x-www-form-urlencoded" );
-        client.println( "Connection: close" );
-        client.println();
-        client.println();
-        client.stop();
-      } //end if
-      else
-      {
-      Serial.println("Error connecting to client: front door open"); 
-      }//end else
-         
+  report_zone_to_db("front", 1, 0);
          
    } else{
      // front door was closed
@@ -312,16 +227,29 @@ void loop() {
      delay(100);
      }
      
-       if (client.connect(server, 80)) {
-        Serial.println("Connected...sending front door close");
-        client.print( "GET /ren/add.php?");
-        client.print("db=zones&&");
-        client.print("doorname=front&&");
-        client.print("event=");
-        client.print( frontDoorState );
-        client.print("&&");
-        client.print("deltatime=");
-        client.print(ftdeltatime);
+   report_zone_to_db("front", 0, ftdeltatime);
+ }
+  
+}//end check front door state
+
+ lastbackDoorState = backDoorState;
+ lastfrontDoorState = frontDoorState;
+
+}
+
+void report_zone_to_db (String doorName, int zoneState, unsigned long deltaTime){
+  
+      if (client.connect(server, 80)) {
+        Serial.print("Connected...sending zone report for ");
+        Serial.println(doorName);
+        client.print( "GET /ren/add.php?db=");
+        client.print("zones");
+        client.print("&&doorname=");
+        client.print( doorName);
+        client.print("&&event=");
+        client.print( zoneState );
+        client.print("&&deltatime=");
+        client.print(deltaTime);
         client.println( " HTTP/1.1");
         client.println( "Host: 192.168.1.115" );
         client.println( "Content-Type: application/x-www-form-urlencoded" );
@@ -332,13 +260,35 @@ void loop() {
       } //end if
       else
       {
-      Serial.println("Error connecting to client: front door close"); 
-      }//end else  
- }
-  
+      Serial.print("Error connecting to client for ");
+      Serial.println(doorName);
+      }//end else
 }
 
- lastbackDoorState = backDoorState;
- lastfrontDoorState = frontDoorState;
-
+void report_enviro_to_db (String name, double temp, double humi){
+  
+      if (client.connect(server, 80)) {
+        Serial.print("Connected...sending enviro reading for");
+        Serial.println(name);
+        client.print( "GET /ren/add.php?db=");
+        client.print("enviro");
+        client.print("&&name=");
+        client.print(name);
+        client.print("&&temp=");
+        client.print( temp );
+        client.print("&&humi=");
+        client.print( humi );
+        client.println( " HTTP/1.1");
+        client.println( "Host: 192.168.1.115" );
+        client.println( "Content-Type: application/x-www-form-urlencoded" );
+        client.println( "Connection: close" );
+        client.println();
+        client.println();
+        client.stop();
+      } //end if
+      else
+      {
+      Serial.print("Error connecting to client for ");
+      Serial.println(name);
+      }//end else
 }
