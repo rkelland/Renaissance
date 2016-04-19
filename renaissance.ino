@@ -26,8 +26,14 @@
 #include <math.h>
 #include <SPI.h>
 #include <Ethernet.h>
+#include <DHT.h>
 
 #define THERM_PIN   0  // 10ktherm & 10k resistor as divider.
+#define DHTPIN 4     // what digital pin we're connected to
+#define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
+
+// Initialize DHT sensor.
+DHT dht(DHTPIN, DHTTYPE);
 
 // Enter a MAC address and IP address for your controller below.
 // The IP address will be dependent on your local network:
@@ -51,6 +57,7 @@ EthernetClient client;
   unsigned long bkdeltatime;
   unsigned long ftdeltatime = 0;
   unsigned long time = 0;
+
   unsigned long smoothTime = 0;
   long Resistance;
   double Temp;
@@ -59,6 +66,13 @@ EthernetClient client;
   int sampleIndex = 0;
   int total = 0;
   int avgSample = 0;
+  
+  //DHT readings
+  float dhtTemp[numSamples];
+  float dhtHumi[numSamples];
+  float dhtTotalTemp = 0;
+  float dhtTotalHumi = 0;
+  
   //Time in millis for each reading corrected for drift.
   unsigned long sampleInterval = 1796700;
 
@@ -70,8 +84,10 @@ void setup(){
   Serial.begin(9600);
   Serial.println("=======VOID SETUP========");
 
+  //start the dht
+  dht.begin();
+  Serial.println("DHT Started");
 
-  
   // start the Ethernet connection:
   if (Ethernet.begin(mac) == 0) {
     Serial.println("Failed to configure Ethernet using DHCP");
@@ -108,25 +124,31 @@ void setup(){
 
 //loop runs FORVEVER
 void loop() {
- 
+    
+    //collect info to make average
     if((millis() - smoothTime) >= (sampleInterval/numSamples)-100){
       //reset timer
       smoothTime = millis();
-      //Serial.print("SampleIndex: ");
-      //Serial.println(sampleIndex);
-      //Serial.print(" old total: ");
-      //Serial.println(total);
+      
+      //thermistor
       total = total - samples[sampleIndex];
       samples[sampleIndex] =  analogRead(THERM_PIN);
-      //Serial.print("reading: ");
-      //Serial.println(samples[sampleIndex]);
       total = total + samples[sampleIndex];
-      //Serial.print(" new total: ");
-      //Serial.println(total);
+      
+      //DHT
+      dhtTotalTemp = dhtTotalTemp - dhtTemp[sampleIndex];
+      dhtTemp[sampleIndex] = dht.readTemperature();
+      dhtTotalTemp = dhtTotalTemp + dhtTemp[sampleIndex];
+      
+      dhtTotalHumi = dhtTotalHumi - dhtHumi[sampleIndex];
+      dhtHumi[sampleIndex] = dht.readHumidity();
+      dhtTotalHumi = dhtTotalHumi + dhtHumi[sampleIndex];
+
+      //increment sampleIndex
       sampleIndex = sampleIndex+1;
     }//end if smoothTime
   
-  //send temperature info to database base on sampleInterval time
+  //send temperature info to database based on sampleInterval time
     if (millis() - time >= sampleInterval){   
   
       //reset timers and index
@@ -147,8 +169,14 @@ void loop() {
       Serial.print(Temp);
       Serial.print(char(186));
       Serial.println("C");
- 
+      
+      //report thermistor average temperature
       report_enviro_to_db ("basement", Temp, 0);   
+   
+      //report DHT readings
+      float avgT = dhtTotalTemp/numSamples;
+      float avgH = dhtTotalHumi/numSamples;
+      report_enviro_to_db ("DHT_Basement", avgT, avgH);    
  
     }  //end if - temp timer
     
