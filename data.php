@@ -7,7 +7,7 @@ if (!$con) {
 
 mysql_select_db("whitburn", $con);
 
-$result = mysql_query("SELECT created, temp FROM enviro ORDER BY id DESC LIMIT 200");
+$result = mysql_query("SELECT created, temp FROM enviro WHERE name='basement'  ORDER BY id DESC LIMIT 200");
 
 while($row = mysql_fetch_array($result)) {
 
