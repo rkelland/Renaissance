@@ -1,0 +1,139 @@
+<html>
+<head>
+<title>Whitburn Enviro</title>
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+<script src="../highcharts/js/highcharts.js"></script>
+<script src="../highcharts/js/highcharts-more.js"></script>
+
+
+<script>
+
+ var now =Date.now();
+ var twentyfour = now - (28 * 60 * 60 * 1000);
+ var fortyeight = now - (52 * 60 * 60 * 1000);
+
+$(document).ready(function() {
+	var optionsTemp = {
+		chart: {
+			renderTo: 'containerTemp',
+			type:'spline'
+		},
+		title: {
+	  		text:'Indoor Temperatures'
+ 		},
+                xAxis: {
+			   plotBands: [{
+                                color: '#EEEEEE',
+                                from: fortyeight,
+                                to: twentyfour
+                         }],
+                	type: 'datetime',
+                	dateTimeLabelFormats: {
+                		month: '%e. %b',
+                		year: '%b'
+	                },
+			title: {
+				text:'Date'
+			}
+		},
+                yAxis: [{
+                     	title: {
+                text: 'Temperature *C'
+                  },
+              
+        }],	
+		series: []
+
+};
+
+        var optionsHumi = {
+                chart: {
+                        renderTo: 'containerHumi',
+                        type:'spline'
+                },
+                title: {
+                        text:'Relative Humidity'
+                },
+                xAxis: {
+			formatter: function() {
+                                return Highcharts.dateFormat('%a %l%p', this.value);
+                            },
+			plotBands: [{
+                                color: '#EEEEEE',
+                                from: fortyeight,
+                                to: twentyfour
+                         }],
+                        type: 'datetime',
+                        title: {
+                                text:'Date'
+                        }
+                },
+                yAxis: [{
+                        title: {
+                text: 'Humidity %'
+                  },
+
+        }],
+                series: []
+
+};
+
+
+var drawChart = function(chartoption, data, name, color, index) {
+    // 'series' is an array of objects with keys:
+    //  'chartoptions' is the name of highcharts options in the case of multiple charts on a page 
+    //     - 'name' (string)
+    //     - 'data' (array)
+    //     - 'index' (int) i the id of the series
+    var newSeriesData = {
+        name: name,
+	color: color,
+        data: data
+    };
+
+    // Add the new data to the series array
+    chartoption.series[index] = newSeriesData;
+//    chartoption.series.push(newSeriesData);
+
+    // If you want to remove old series data, you can do that here too
+    //	console.log("options");
+    //	console.log(options);
+    // Render the chart
+    var chart = new Highcharts.Chart(chartoption);
+};
+
+  $.getJSON('http://192.168.1.115/ren/envirodata.php?&name=basement&type=temp&callback=?', function(data){	
+	drawChart(optionsTemp, data,'Basement Thermistor','#0A8C84',0);
+        });
+
+  $.getJSON('http://192.168.1.115/ren/envirodata.php?&name=DHT_Basement&type=temp&callback=?', function(data){	
+	drawChart(optionsTemp, data,'Basement DHT','#F50572',1);
+        });
+
+  $.getJSON('http://192.168.1.115/ren/envirodata.php?&name=DHT_Basement&type=humi&callback=?', function(data){	
+	drawChart(optionsHumi, data,'Basement DHT','#000572',0);
+        });
+
+});
+
+</script>
+
+
+</head>
+
+<body>
+<a href="zones.html">Zones</a>
+
+<h1>Temperature</h1>
+<div id="containerTemp" style="width:100%; height:400px;"></div>
+
+<h1>Humidity</h1>
+<div id="containerHumi" style="width:100%; height:400px;"></div>
+<a href="zones.html">Zones</a>
+
+</body>
+
+<html>
